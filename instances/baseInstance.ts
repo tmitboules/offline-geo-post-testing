@@ -8,7 +8,7 @@ export default async function () {
     },
   });
   
-  request.defaults.timeout = 30000;
+  request.defaults.timeout = 5000;
 
   request.interceptors.response.use(
     function (response) {

@@ -11,7 +11,7 @@ export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
 
-    var addPostAPICall = useAddPost();
+    var {addPostMutation} = useAddPost();
   
 
   return (
@@ -19,7 +19,7 @@ export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'
         <TextInput placeholder='title' style={{ borderWidth: 1, borderColor: 'red', padding: 10, marginHorizontal: 10, marginTop: 120 }} value={title} onChangeText={setTitle}></TextInput>
           <TextInput placeholder='body' style={{ borderWidth: 1, borderColor: 'red', padding: 10, margin: 10 }} value={body} onChangeText={setBody}></TextInput>
           <Button title='Submit' onPress={() => {
-            const postData: Post = {
+            const data: Post = {
               title: title,
               body: body,
               geo_location: {
@@ -28,12 +28,7 @@ export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'
               }
             }
 
-            addPostAPICall.mutate(postData, {
-              onSettled: (res) => {
-                // console.log("useAddComment");
-                console.log(res);
-              },
-            });
+            addPostMutation.mutate({data: data});
 
           }}></Button>
     </View>

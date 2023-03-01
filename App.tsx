@@ -1,22 +1,24 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { MutationCache, QueryClient, useMutation } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { MutationCache, QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+import ky from 'ky';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import useCachedResources from './hooks/useCachedResources';
 import useColorScheme from './hooks/useColorScheme';
-import Navigation from './navigation';
 import baseInstance from './instances/baseInstance';
 import { Post } from './Models/Post';
-import { Button, TextInput } from 'react-native';
-import { useState } from 'react';
+import Navigation from './navigation';
+
+const addPostkey = ['addPost']
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       cacheTime: 1000 * 60 * 60 * 24, // 24 hours
+      staleTime: 2000,
+      retry: 0,
     },
   },
   mutationCache: new MutationCache({
@@ -29,41 +31,47 @@ const queryClient = new QueryClient({
   }),
 })
 
+queryClient.setMutationDefaults(addPostkey, {
+  mutationFn: async ({ data }: {data: Post}) => {
+    console.log('Hello there ....', data)
+    // to avoid clashes with our optimistic update when an offline mutation continues
+    await queryClient.cancelQueries(addPostkey);
+    return addPost(data);
+  },
+});
+
 const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage
 })
 
 
-export const addPost = async (post: Post): Promise<Post> => {
-  const instance = await baseInstance();
-
-  const { data } = await instance.post("/locatedPost/Create", post);
-  return data;
+export const addPost = async (post: Post) => {
+  console.log('POst::::', post)
+  ky.post("https://cc-general-service-wus2.azurewebsites.net/locatedPost/Create", { json: post }).json()
 };
 
 export const useAddPost = () => {
-
-  
-  return useMutation(addPost, {
-    mutationKey: ['addPost'],
+  const addPostMutation = useMutation({
+    mutationKey: addPostkey,
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['addPost'] });
-      const previousData = queryClient.getQueryData(['addPost']);
-      queryClient.setQueryData(['addPost'], (old: any) => {
+      await queryClient.cancelQueries({ queryKey: addPostkey });
+      const previousData = queryClient.getQueryData(addPostkey);
+      queryClient.setQueryData(addPostkey, (old: any) => {
        return {...old}
       });
       return { previousData };
     },
-    onSuccess() {
-
-    },
     onError: (_, __, context) => {
-      queryClient.setQueryData(['addPost'], context?.previousData);
+      queryClient.setQueryData(addPostkey, context?.previousData);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['addPost'] });
+      queryClient.invalidateQueries({ queryKey: addPostkey });
     },
   });
+
+  return {
+    addPostMutation
+  }
 };
 
 
@@ -74,7 +82,13 @@ export default function App() {
     return (
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister: asyncStoragePersister }}>
+        persistOptions={{ persister: asyncStoragePersister }}
+        onSuccess={() => {
+          // resume mutations after initial restore from localStorage was successful
+          queryClient.resumePausedMutations().then(() => {
+            queryClient.invalidateQueries();
+          });
+        }}>
          <SafeAreaProvider>
           <Navigation colorScheme={colorScheme} />
           <StatusBar />
