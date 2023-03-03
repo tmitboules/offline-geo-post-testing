@@ -1,29 +1,39 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { MutationCache, QueryClient, useMutation } from '@tanstack/react-query';
+import { MutationCache, QueryClient, useMutation, focusManager } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import ky from 'ky';
+import { AppStateStatus, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useAppState } from './hooks/useAppState';
 
 import useColorScheme from './hooks/useColorScheme';
+import { useOnlineManager } from './hooks/useOnlineManager';
 import baseInstance from './instances/baseInstance';
 import { Post } from './Models/Post';
 import Navigation from './navigation';
 
 const addPostkey = ['addPost']
 
+function onAppStateChange(status: AppStateStatus) {
+  // React Query already supports in web browser refetch on window focus by default
+  if (Platform.OS !== 'web') {
+    focusManager.setFocused(status === 'active');
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       cacheTime: 1000 * 60 * 60 * 24, // 24 hours
       staleTime: 2000,
-      retry: 0,
+      retry: 2,
     },
   },
   mutationCache: new MutationCache({
     onSuccess: (data) => {
-     console.log('Mutation success')
+     console.log('Mutation success', data)
     },
     onError: (error) => {
       console.log('Mutation error', error)
@@ -76,6 +86,8 @@ export const useAddPost = () => {
 
 
 export default function App() {
+  useOnlineManager();
+  useAppState(onAppStateChange);
 
   const colorScheme = useColorScheme();
 
