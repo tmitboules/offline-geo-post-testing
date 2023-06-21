@@ -23,17 +23,26 @@ function onAppStateChange(status: AppStateStatus) {
   }
 }
 
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  throttleTime: 1000,
+})
+
 const queryClient = new QueryClient({
   defaultOptions: {
+    mutations: {
+      staleTime: Infinity,
+      cacheTime: Infinity,
+      retry: 0,
+    },
     queries: {
-      cacheTime: 1000 * 60 * 60 * 24, // 24 hours
-      staleTime: 2000,
       retry: 2,
+      cacheTime: 1000 * 10,
     },
   },
   mutationCache: new MutationCache({
     onSuccess: (data) => {
-     console.log('Mutation success', data)
+      console.log('Mutation success', data)
     },
     onError: (error) => {
       console.log('Mutation error', error)
@@ -42,32 +51,29 @@ const queryClient = new QueryClient({
 })
 
 queryClient.setMutationDefaults(addPostkey, {
-  mutationFn: async ({ data }: {data: Post}) => {
+  mutationFn: async ({ data }: { data: Post }) => {
     console.log('Hello there ....', data)
     // to avoid clashes with our optimistic update when an offline mutation continues
     await queryClient.cancelQueries(addPostkey);
-    return addPost(data);
+    return addPostsWithAxios(data);
   },
 });
 
-const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage
-})
+export const addPostsWithAxios = async (post: Post): Promise<any> => {
+  const instance = await baseInstance();
 
-
-export const addPost = async (post: Post) => {
-  console.log('POst::::', post)
-  ky.post("https://cc-general-service-wus2.azurewebsites.net/locatedPost/Create", { json: post }).json()
+  const { data } = await instance.post("locatedPost/Create", post);
+  return data;
 };
 
-export const useAddPost = () => {
-  const addPostMutation = useMutation({
+export const useAddPostWithAxios = () => {
+  const addPostMutation = useMutation(addPostsWithAxios, {
     mutationKey: addPostkey,
-    onMutate: async () => {
+    async onMutate(old) {
       await queryClient.cancelQueries({ queryKey: addPostkey });
       const previousData = queryClient.getQueryData(addPostkey);
       queryClient.setQueryData(addPostkey, (old: any) => {
-       return {...old}
+        return { ...old }
       });
       return { previousData };
     },
@@ -76,6 +82,9 @@ export const useAddPost = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: addPostkey });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries(addPostkey);
     },
   });
 
@@ -91,20 +100,20 @@ export default function App() {
 
   const colorScheme = useColorScheme();
 
-    return (
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister: asyncStoragePersister }}
-        onSuccess={() => {
-          // resume mutations after initial restore from localStorage was successful
-          queryClient.resumePausedMutations().then(() => {
-            queryClient.invalidateQueries();
-          });
-        }}>
-         <SafeAreaProvider>
-          <Navigation colorScheme={colorScheme} />
-          <StatusBar />
-        </SafeAreaProvider>
-      </PersistQueryClientProvider>
-    );
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ maxAge: Infinity, persister: asyncStoragePersister }}
+      onSuccess={() => {
+        // resume mutations after initial restore from localStorage was successful
+        queryClient.resumePausedMutations().then(() => {
+          queryClient.invalidateQueries();
+        });
+      }}>
+      <SafeAreaProvider>
+        <Navigation colorScheme={colorScheme} />
+        <StatusBar />
+      </SafeAreaProvider>
+    </PersistQueryClientProvider>
+  );
 }

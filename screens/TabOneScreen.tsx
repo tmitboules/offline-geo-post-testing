@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, StyleSheet, TextInput } from 'react-native';
-import { useAddPost } from '../App';
+import { useAddPostWithAxios } from '../App';
 
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
@@ -11,26 +11,25 @@ export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
 
-    var {addPostMutation} = useAddPost();
-  
+  var { addPostMutation } = useAddPostWithAxios();
 
   return (
     <View style={styles.container}>
-        <TextInput placeholder='title' style={{ borderWidth: 1, borderColor: 'red', padding: 10, marginHorizontal: 10, marginTop: 120 }} value={title} onChangeText={setTitle}></TextInput>
-          <TextInput placeholder='body' style={{ borderWidth: 1, borderColor: 'red', padding: 10, margin: 10 }} value={body} onChangeText={setBody}></TextInput>
-          <Button title='Submit' onPress={() => {
-            const data: Post = {
-              title: title,
-              body: body,
-              geo_location: {
-                geo_lat: 122,
-                geo_lon: 133,
-              }
-            }
+      <TextInput placeholder='title' style={{ borderWidth: 1, borderColor: 'red', padding: 10, marginHorizontal: 10, marginTop: 120 }} value={title} onChangeText={setTitle}></TextInput>
+      <TextInput placeholder='body' style={{ borderWidth: 1, borderColor: 'red', padding: 10, margin: 10 }} value={body} onChangeText={setBody}></TextInput>
+      <Button title='Submit' onPress={() => {
+        const data: Post = {
+          title: title,
+          body: body,
+          geo_location: {
+            geo_lat: 122,
+            geo_lon: 133,
+          }
+        }
 
-            addPostMutation.mutate({data: data});
+        addPostMutation.mutate(data);
 
-          }}></Button>
+      }}></Button>
     </View>
   );
 }
