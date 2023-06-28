@@ -11,7 +11,7 @@ import { useAppState } from './hooks/useAppState';
 import useColorScheme from './hooks/useColorScheme';
 import { useOnlineManager } from './hooks/useOnlineManager';
 import baseInstance from './instances/baseInstance';
-import { Post } from './Models/Post';
+import { LocatedPostInfo, Post, PostResponse } from './Models/Post';
 import Navigation from './navigation';
 
 const addPostkey = ['addPost']
@@ -31,7 +31,6 @@ const asyncStoragePersister = createAsyncStoragePersister({
 const queryClient = new QueryClient({
   defaultOptions: {
     mutations: {
-      staleTime: Infinity,
       cacheTime: Infinity,
       retry: 0,
     },
@@ -52,7 +51,6 @@ const queryClient = new QueryClient({
 
 queryClient.setMutationDefaults(addPostkey, {
   mutationFn: async ({ data }: { data: Post }) => {
-    console.log('Hello there ....', data)
     // to avoid clashes with our optimistic update when an offline mutation continues
     await queryClient.cancelQueries(addPostkey);
     return addPostsWithAxios(data);
@@ -61,7 +59,6 @@ queryClient.setMutationDefaults(addPostkey, {
 
 export const addPostsWithAxios = async (post: Post): Promise<any> => {
   const instance = await baseInstance();
-
   const { data } = await instance.post("locatedPost/Create", post);
   return data;
 };
@@ -70,21 +67,35 @@ export const useAddPostWithAxios = () => {
   const addPostMutation = useMutation(addPostsWithAxios, {
     mutationKey: addPostkey,
     async onMutate(old) {
+      console.log('onMutate:::')
       await queryClient.cancelQueries({ queryKey: addPostkey });
-      const previousData = queryClient.getQueryData(addPostkey);
-      queryClient.setQueryData(addPostkey, (old: any) => {
-        return { ...old }
-      });
+      const previousData = old;
       return { previousData };
     },
     onError: (_, __, context) => {
+      console.log('onErrorrrr')
       queryClient.setQueryData(addPostkey, context?.previousData);
     },
     onSettled: () => {
+      console.log('onSettled:::')
       queryClient.invalidateQueries({ queryKey: addPostkey });
     },
     onSuccess() {
-      queryClient.invalidateQueries(addPostkey);
+      console.log('onSuccess')
+      // queryClient.invalidateQueries(addPostkey);
+      // const postResponse: LocatedPostInfo = {
+      //   located_post: {
+      //     title: data.title,
+      //     body: data.body,
+      //     date_added: "",
+      //     date_updated: "",
+      //     geo_location: data.geo_location
+      //   },
+      //   id: new Date().toString(),
+      //   added_by: '11',
+      //   updated_by: ''
+      // }
+      queryClient.invalidateQueries([...addPostkey, 'posts']);
     },
   });
 
@@ -112,7 +123,6 @@ export default function App() {
       }}>
       <SafeAreaProvider>
         <Navigation colorScheme={colorScheme} />
-        <StatusBar />
       </SafeAreaProvider>
     </PersistQueryClientProvider>
   );

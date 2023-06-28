@@ -7,7 +7,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "update_test": "eas update --branch test",
+    "update_dev": "eas update --branch development",
+    "build_dev": "eas build --profile development",
+    "build_test": "eas build --profile preview"
   },
   "jest": {
     "preset": "jest-expo"
@@ -26,6 +30,7 @@
     "expo": "~47.0.12",
     "expo-asset": "~8.7.0",
     "expo-constants": "~14.0.2",
+    "expo-dev-client": "~2.0.1",
     "expo-font": "~11.0.1",
     "expo-linking": "~3.3.0",
     "expo-splash-screen": "~0.17.5",
