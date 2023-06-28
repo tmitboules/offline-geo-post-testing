@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "version": ">= 1.1.1",
+    "promptToConfigurePushNotifications": false
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "test"
+    },
+    "production": {
+      "channel": "production"
+    },
+    "simulator": {
+      "channel": "simulators",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
