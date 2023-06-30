@@ -36,7 +36,7 @@ export const useAddPost = () => {
             queryClient.invalidateQueries({ queryKey: addPostKey });
         },
         onError: (_, __, context) => {
-            queryClient.setQueryData(['posts'], context?.previousData)
+            queryClient.setQueryData(postsKey, context?.previousData)
         },
     });
 

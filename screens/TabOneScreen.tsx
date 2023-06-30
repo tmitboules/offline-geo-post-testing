@@ -14,40 +14,38 @@ export default function TabOneScreen() {
   const { data } = useGetPost()
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <TextInput placeholder='Title' style={styles.textInput} placeholderTextColor={'white'} value={title} onChangeText={setTitle}></TextInput>
-        <TextInput placeholder='Body' style={styles.textInput} placeholderTextColor={'white'} value={body} onChangeText={setBody}></TextInput>
-        <Button disabled={addPostMutation.isLoading} title={addPostMutation.isLoading ? 'Submitting data ...' : 'Submit'} onPress={() => {
-          const data: Post = {
-            title: title,
-            body: body,
-            geo_location: {
-              geo_lat: 122,
-              geo_lon: 133,
-            }
+    <View style={styles.container}>
+      <TextInput placeholder='Title' style={styles.textInput} placeholderTextColor={'white'} value={title} onChangeText={setTitle}></TextInput>
+      <TextInput placeholder='Body' style={styles.textInput} placeholderTextColor={'white'} value={body} onChangeText={setBody}></TextInput>
+      <Button title={addPostMutation.isLoading ? 'Submitting data ...' : 'Submit'} onPress={() => {
+        const data: Post = {
+          title: title,
+          body: body,
+          geo_location: {
+            geo_lat: 122,
+            geo_lon: 133,
           }
-          addPostMutation.mutateAsync(data).then(() => {
-            setBody('')
-            setTitle('')
-          });
-        }} />
+        }
+        addPostMutation.mutateAsync(data).then(() => {
+          setBody('')
+          setTitle('')
+        });
+      }} />
 
-        {data && data.locatedPosts &&
-          <FlatList
-            style={{ width: '100%' }}
-            keyExtractor={item => item.id}
-            data={data.locatedPosts}
-            renderItem={({ item }) =>
-              <View style={{ borderBottomColor: 'grey', borderBottomWidth: 1, marginHorizontal: 10, paddingVertical: 10 }}>
-                <Text style={{ color: 'white' }}>{`title: ${item.located_post.title}`}</Text>
-                <Text style={{ marginTop: 10, color: 'white' }}>{`body: ${item.located_post.body}`}</Text>
-              </View>
-            }>
-          </FlatList>}
+      {data && data.locatedPosts &&
+        <FlatList
+          style={{ width: '100%' }}
+          keyExtractor={item => item.id}
+          data={data.locatedPosts}
+          renderItem={({ item }) =>
+            <View style={{ borderBottomColor: 'grey', borderBottomWidth: 1, marginHorizontal: 10, paddingVertical: 10 }}>
+              <Text style={{ color: 'white' }}>{`title: ${item.located_post.title}`}</Text>
+              <Text style={{ marginTop: 10, color: 'white' }}>{`body: ${item.located_post.body}`}</Text>
+            </View>
+          }>
+        </FlatList>}
 
-      </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

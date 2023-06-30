@@ -1,6 +1,8 @@
 import { MutationCache, QueryClient } from "@tanstack/react-query"
-import { addPostsWithAxios } from "../network/api"
-import { addPostKey } from "../network/usePost"
+
+import { addContentVideo, addPostsWithAxios } from "../network/api"
+import { addContentVideoKey, contentVideoKey } from "../network/useContentVideo"
+import { addPostKey, postsKey } from "../network/usePost"
 
 export function useDefaultQueryClient() {
      const defaultQueryClient = new QueryClient({
@@ -15,7 +17,7 @@ export function useDefaultQueryClient() {
         mutationCache: new MutationCache({
           onSuccess: (data) => {
             console.log('Mutation success', data)
-            defaultQueryClient.invalidateQueries(['posts'])
+            // defaultQueryClient.invalidateQueries(postsKey)
           },
           onError: (error) => {
             console.log('Mutation error', error)
@@ -30,6 +32,21 @@ export function useDefaultQueryClient() {
             await defaultQueryClient.cancelQueries(addPostKey);
             return addPostsWithAxios(data);
         },
+        onSuccess: () => {
+            defaultQueryClient.invalidateQueries(postsKey)
+        }
+      });
+      
+      defaultQueryClient.setMutationDefaults(addContentVideoKey, {
+        mutationFn: async (data) => {
+            // // to avoid clashes with our optimistic update when an offline mutation continues
+            await defaultQueryClient.cancelQueries(addContentVideoKey);
+            return addContentVideo(data);
+        },
+        onSuccess: () => {
+            console.log('Mutation success here')
+            defaultQueryClient.invalidateQueries(contentVideoKey)
+        }
       });
 
       return {
