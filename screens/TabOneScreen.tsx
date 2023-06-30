@@ -1,26 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button, FlatList, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, View } from '../components/Themed';
 import { Post } from '../Models/Post';
-import { getPostList } from '../network/api';
-import { useAddPostWithAxios } from '../network/usePost';
+import { useAddPost, useGetPost } from '../network/usePost';
 
 export default function TabOneScreen() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
 
-  var { addPostMutation } = useAddPostWithAxios();
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['posts'],
-    queryFn: getPostList,
-  })
+  var { addPostMutation, } = useAddPost();
+  const { data } = useGetPost()
 
   return (
-    <SafeAreaView style={{ flex: 1}}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
         <TextInput placeholder='Title' style={styles.textInput} placeholderTextColor={'white'} value={title} onChangeText={setTitle}></TextInput>
         <TextInput placeholder='Body' style={styles.textInput} placeholderTextColor={'white'} value={body} onChangeText={setBody}></TextInput>
@@ -62,7 +56,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: 'black',
-    padding: 10 
+    padding: 10
   },
   textInput: { borderRadius: 8, borderWidth: 1, borderColor: 'white', padding: 10, margin: 10, color: 'white', width: '100%' },
   title: {

@@ -1,15 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { focusManager, MutationCache, QueryClient } from '@tanstack/react-query';
+import { focusManager } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import { AppStateStatus, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useAppState } from './hooks/useAppState';
 
+import { useAppState } from './hooks/useAppState';
+import { useDefaultQueryClient } from './hooks/useDefaultQueryClient';
 import { useOnlineManager } from './hooks/useOnlineManager';
-import { addPostsWithAxios } from './network/api';
-import { addPostKey } from './network/usePost';
 import TabOneScreen from './screens/TabOneScreen';
 
 
@@ -25,34 +24,7 @@ const asyncStoragePersister = createAsyncStoragePersister({
   throttleTime: 1000,
 })
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    mutations: {
-      cacheTime: Infinity,
-    },
-    queries: {
-      cacheTime: Infinity,
-    }
-  },
-  mutationCache: new MutationCache({
-    onSuccess: (data) => {
-      console.log('Mutation success', data)
-      queryClient.invalidateQueries(['posts'])
-    },
-    onError: (error) => {
-      console.log('Mutation error', error)
-      alert('there is an error in mutation cache.')
-    },
-  }),
-})
-
-queryClient.setMutationDefaults(addPostKey, {
-  mutationFn: async (data) => {
-    // // to avoid clashes with our optimistic update when an offline mutation continues
-    await queryClient.cancelQueries(addPostKey);
-    return addPostsWithAxios(data);
-  },
-});
+const { defaultQueryClient } = useDefaultQueryClient()
 
 export default function App() {
   useOnlineManager();
@@ -60,12 +32,12 @@ export default function App() {
 
   return (
     <PersistQueryClientProvider
-      client={queryClient}
+      client={defaultQueryClient}
       persistOptions={{ maxAge: Infinity, persister: asyncStoragePersister }}
       onSuccess={() => {
         // resume mutations after initial restore from localStorage was successful
-        queryClient.resumePausedMutations().then(() => {
-          queryClient.invalidateQueries();
+        defaultQueryClient.resumePausedMutations().then(() => {
+          defaultQueryClient.invalidateQueries();
         });
       }}>
       <SafeAreaProvider>
