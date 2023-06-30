@@ -1,6 +1,6 @@
 import { MutationCache, QueryClient } from "@tanstack/react-query"
 import { addPostsWithAxios } from "../network/api"
-import { addPostKey } from "../network/usePost"
+import { addPostKey, postsKey } from "../network/usePost"
 
 export function useDefaultQueryClient() {
      const defaultQueryClient = new QueryClient({
@@ -15,7 +15,7 @@ export function useDefaultQueryClient() {
         mutationCache: new MutationCache({
           onSuccess: (data) => {
             console.log('Mutation success', data)
-            defaultQueryClient.invalidateQueries(['posts'])
+            defaultQueryClient.invalidateQueries(postsKey)
           },
           onError: (error) => {
             console.log('Mutation error', error)
