@@ -54,7 +54,7 @@ export function useDefaultQueryClient() {
       return deletePost(data);
     },
     onSuccess: () => {
-      // defaultQueryClient.invalidateQueries(postsKey)
+      defaultQueryClient.invalidateQueries(postsKey)
     }
   });
 
